@@ -1,26 +1,36 @@
-import { Controller, Get, Param, Post, Query } from '@nestjs/common';
+import { Body, Controller, Get, NotFoundException, Param, Post, Query } from '@nestjs/common';
+import { EpisodesService } from './episodes.service';
+import { Episode } from './episodes.service'; // Import the Episode type
+import { CreateEpisodeDto } from './dto/create-episode.dto';
+import { ConfigService } from 'src/config/config.service';
 
 @Controller('episodes')
 export class EpisodesController {
-    @Get()
-    findAll(@Query('page') page: number, @Query('limit') limit: number, @Query('sort') sort: 'asc' | 'desc') {
-        if (page && limit && sort) return `This action returns all episodes with page ${page}, limit ${limit}, and sort ${sort}`;
-        return `This action returns all episodes with page ${page}, limit ${limit}, and sort ${sort}`;
+    constructor(
+        private episodesService: EpisodesService,
+        private configService: ConfigService, // Inject ConfigService to use it in the controller
+    ) {}
+
+    async findAll(@Query('page') page: number, @Query('limit') limit: number, @Query('sort') sort: 'asc' | 'desc'): Promise<Episode[]> {
+        if (page && limit && sort) console.log(`This action returns all episodes with page ${page}, limit ${limit}, and sort ${sort}`);
+        return await this.episodesService.findAll(page, limit, sort);
     }
 
     @Get('featured')
-    findFeatured() {
-        return 'This action returns all featured episodes';
+    findFeaturedEpisodes() {
+        return this.episodesService.findFeaturedEpisodes();
     }
 
     @Get(':id')
-    findOne(@Param('id') id: string) {
-        return `This action returns a #${id} episode`;
+    async findOne(@Param('id') id: string) {
+       const episode = await this.episodesService.findOne(id);
+       if (!episode) throw new NotFoundException(`Episode not found`);
+       return episode;
     }
 
     @Post()
-    create() {
-        return 'This action adds a new episode';
+    create(@Body() input: CreateEpisodeDto) {
+        return this.episodesService.create(input);
     }
 
 }
